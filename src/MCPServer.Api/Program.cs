@@ -1,9 +1,14 @@
 using MCPServer.Api;
+using MCPServer.Api.Auth;
+using MCPServer.Api.Mcp;
+using MCPServer.Api.OAuth;
 using MCPServer.Api.Middlewares;
 using MCPServer.Composition;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using ModelContextProtocol.AspNetCore.Authentication;
+using ModelContextProtocol.Authentication;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
@@ -25,6 +30,36 @@ try
     // Add services to the container.
     builder.Services.AddServices(configuration);
     builder.Services.AddCompositionServices(configuration);
+
+    var oauthMode = string.Equals(configuration["Jira:AuthMode"], "OAuth", StringComparison.OrdinalIgnoreCase);
+    builder.Services.AddMcpServer()
+        .WithHttpTransport(o => o.Stateless = true)
+        .WithTools<JiraMcpTools>();
+    if (oauthMode)
+    {
+        // SessionBearer validates tokens; the SDK's MCP scheme owns the 401 challenge and the
+        // RFC 9728 protected-resource metadata document.
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = SessionBearerDefaults.Scheme;
+                options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, SessionBearerHandler>(
+                SessionBearerDefaults.Scheme, null)
+            .AddMcp(options => options.Events.OnResourceMetadataRequest = context =>
+            {
+                var request = context.HttpContext.Request;
+                var baseUrl = $"{request.Scheme}://{request.Host}";
+                context.ResourceMetadata = new ProtectedResourceMetadata
+                {
+                    Resource = $"{baseUrl}/mcp",
+                    AuthorizationServers = [baseUrl],
+                    BearerMethodsSupported = ["header"]
+                };
+                return Task.CompletedTask;
+            });
+        builder.Services.AddAuthorization();
+    }
 
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
@@ -69,6 +104,19 @@ try
 
     app.UseHttpsRedirection();
     app.UseRouting();
+    if (oauthMode)
+    {
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapJiraOAuth();
+        app.MapMcp("/mcp").RequireAuthorization();
+    }
+    else if (app.Environment.IsDevelopment())
+    {
+        // ApiToken mode: every caller shares one Jira identity, so /mcp is unauthenticated and local-only.
+        app.MapMcp("/mcp");
+    }
+
     app.MapControllers();
 
     // Map Health Check Endpoints
@@ -95,3 +143,5 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program;

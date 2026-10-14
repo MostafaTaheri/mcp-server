@@ -19,6 +19,7 @@
     <Project Path="src/MCPServer.Composition/MCPServer.Composition.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/MCPServer.Api.Tests/MCPServer.Api.Tests.csproj" />
     <Project Path="test/MCPServer.ArchTests/MCPServer.ArchTests.csproj" />
     <Project Path="test/MCPServer.Infrastructure.ExternalServices.Tests/MCPServer.Infrastructure.ExternalServices.Tests.csproj" />
   </Folder>
