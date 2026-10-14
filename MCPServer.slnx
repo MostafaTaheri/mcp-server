@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/Presentation/">
+    <Project Path="src/MCPServer.Api/MCPServer.Api.csproj" />
+  </Folder>
+  <Folder Name="/Business/">
+    <Project Path="src/MCPServer.Application/MCPServer.Application.csproj" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="src/MCPServer.Domain/MCPServer.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="src/MCPServer.Infrastructure.DataAccess/MCPServer.Infrastructure.DataAccess.csproj" />
+    <Project Path="src/MCPServer.Infrastructure.ExternalServices/MCPServer.Infrastructure.ExternalServices.csproj" />
+  </Folder>
+  <Folder Name="/BuildingBlock/">
+    <Project Path="src/MCPServer.BuildingBlock/MCPServer.BuildingBlock.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/MCPServer.Composition/MCPServer.Composition.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/MCPServer.ArchTests/MCPServer.ArchTests.csproj" />
+  </Folder>
+</Solution>

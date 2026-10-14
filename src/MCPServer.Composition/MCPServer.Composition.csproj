@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MCPServer.Application/MCPServer.Application.csproj" />
+    <ProjectReference Include="../MCPServer.Infrastructure.ExternalServices/MCPServer.Infrastructure.ExternalServices.csproj" />
+  </ItemGroup>
+
+</Project>

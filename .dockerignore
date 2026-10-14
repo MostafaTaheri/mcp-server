@@ -1,0 +1,53 @@
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+Dockerfile.*
+.dockerignore
+docker-compose*.yml
+
+# .NET build output
+**/bin/
+**/bin\\*/
+**/obj/
+**/[Dd]ebug/
+**/[Dd]ebugPublic/
+**/[Rr]elease/
+**/[Rr]eleases/
+**/artifacts/
+**/publish/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Test results / coverage
+**/[Tt]est[Rr]esult*/
+**/coverage*/
+**/*.coverage
+**/*.coveragexml
+**/BenchmarkDotNet.Artifacts/
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+**/*.sln.iml
+*.code-workspace
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Local tooling / repo-specific
+.claude/
+graphify-out/
+ReadMe.md
+*.md
+
+# Env / secrets
+.env
+.env.*

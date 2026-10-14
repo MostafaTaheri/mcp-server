@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <PropertyGroup>
+        <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)'==''">true</TreatWarningsAsErrors>
+        <NoWarn>$(NoWarn);NU1900</NoWarn>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Deterministic>true</Deterministic>
+        <WarningLevel>4</WarningLevel>
+
+        <Company>MT</Company>
+        <Authors>Mostafa Taheri</Authors>
+
+        <Version Condition="'$(Version)'==''">0.0.1</Version>
+        <AssemblyVersion Condition="'$(AssemblyVersion)'==''">0.0.1</AssemblyVersion>
+        <FileVersion Condition="'$(FileVersion)'==''">0.0.1</FileVersion>
+        <InformationalVersion Condition="'$(InformationalVersion)'==''">0.0.1</InformationalVersion>
+
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <Optimize>true</Optimize>
+        <DebugType>pdbonly</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
+
+     <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
