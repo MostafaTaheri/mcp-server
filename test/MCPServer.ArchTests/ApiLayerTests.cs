@@ -72,4 +72,21 @@ public class ApiLayerTests
             $"All controllers must be decorated with [ApiController]. Violating types:{Environment.NewLine}" +
             string.Join(Environment.NewLine, result.FailingTypeNames ?? []));
     }
+
+    [Fact]
+    public void Api_ShouldNot_DependOn_Infrastructure_Or_BuildingBlockInterfaces()
+    {
+        var result = Types.InAssembly(AssemblyReference.Api)
+            .That()
+            .ResideInNamespace("MCPServer.Api")
+            .And()
+            .DoNotHaveName("Program")
+            .ShouldNot()
+            .HaveDependencyOnAny("MCPServer.Infrastructure", "MCPServer.BuildingBlock.Interfaces")
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"The Api layer must go through the Application layer. Violating types:{Environment.NewLine}" +
+            string.Join(Environment.NewLine, result.FailingTypeNames ?? []));
+    }
 }
