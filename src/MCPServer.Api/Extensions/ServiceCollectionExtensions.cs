@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Mapster;
 using MapsterMapper;
 using MCPServer.Api.Helpers;
+using MCPServer.Api.Mcp;
 using MCPServer.Api.Middlewares;
 
 namespace MCPServer.Api;
@@ -27,6 +28,8 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ICorrelationIdProvider, CorrelationIdProvider>();
         services.AddScoped<ExceptionsMiddleware>();
+
+        services.AddMcpServices();
             
         return services;
     }
@@ -48,6 +51,18 @@ public static class ServiceCollectionExtensions
             options.SubstituteApiVersionInUrl = true;
         });
         
+        return services;
+    }
+    
+    public static IServiceCollection AddMcpServices(this IServiceCollection services)
+    {
+        services.AddMcpServer()
+            .WithHttpTransport(o => o.Stateless = true)
+            .WithTools<ObservabilityTools>()
+            .WithResources<ObservabilityResources>()
+            .WithPrompts<InvestigationPrompts>()
+            .WithRequestFilters(f => f.AddCallToolFilter(ToolErrorFilter.Create()));
+
         return services;
     }
 }

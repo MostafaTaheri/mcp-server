@@ -1,8 +1,8 @@
-using MCPServer.BuildingBlock.Interfaces;
 using System.Net.Http.Headers;
 using System.Text;
-using MCPServer.Infrastructure.ExternalServices.Jira;
-using MCPServer.Infrastructure.ExternalServices.Jira.OAuth;
+using MCPServer.BuildingBlock.Interfaces;
+using MCPServer.Infrastructure.ExternalServices.Elastic;
+using MCPServer.Infrastructure.ExternalServices.Kibana;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,54 +13,62 @@ namespace MCPServer.Infrastructure.ExternalServices;
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
-    {
-        var mode = configuration.GetValue<JiraAuthMode?>(JiraOAuthOptions.AuthModeKey) ?? JiraAuthMode.ApiToken;
-        return mode == JiraAuthMode.OAuth
-            ? services.AddJiraOAuthAuthentication(configuration)
-            : services.AddJiraApiTokenAuthentication(configuration);
-    }
+        => services.AddElasticAuthentication(configuration);
 
-    /// <summary>Registers the OAuth 2.0 (3LO) facade; Jira calls carry the authorized caller's token only.</summary>
-    public static IServiceCollection AddJiraOAuthAuthentication(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>Registers Elasticsearch (API key or basic auth) and, only when <c>Kibana:Url</c> is set, Kibana.</summary>
+    public static IServiceCollection AddElasticAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<JiraOAuthOptions>()
-            .Bind(configuration.GetSection(JiraOAuthOptions.SectionName))
+        services.AddOptions<ElasticOptions>()
+            .Bind(configuration.GetSection(ElasticOptions.SectionName))
             .ValidateOnStart();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<JiraOAuthOptions>, JiraOAuthOptionsValidator>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<ElasticOptions>, ElasticOptionsValidator>());
 
-        services.TryAddSingleton(TimeProvider.System);
-        services.AddSingleton<OAuthStateStore>();
-        services.AddSingleton<IJiraOAuthService, JiraOAuthService>();
-        services.AddScoped<IJiraUserContext, JiraUserContext>();
-
-        services.AddHttpClient<AtlassianOAuthClient>(client =>
+        services.AddHttpClient<IElasticApiClient, ElasticApiClient>((sp, client) =>
         {
-            client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("MCPServer");
-        });
-        services.AddScoped<IJiraApiClient, JiraOAuthApiClient>();
-        return services;
-    }
-
-    public static IServiceCollection AddJiraApiTokenAuthentication(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddOptions<JiraOptions>()
-            .Bind(configuration.GetSection(JiraOptions.SectionName))
-            .ValidateOnStart();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<JiraOptions>, JiraOptionsValidator>());
-
-        services.AddHttpClient<IJiraApiClient, JiraApiClient>((sp, client) =>
-        {
-            var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
-            client.BaseAddress = new Uri(options.SiteUrl.TrimEnd('/') + "/");
+            var options = sp.GetRequiredService<IOptions<ElasticOptions>>().Value;
+            var endpoint = ElasticEndpoint.Resolve(options)!;
+            client.BaseAddress = new Uri(endpoint.GetLeftPart(UriPartial.Authority) + "/");
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{options.Email}:{options.ApiToken}"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            client.DefaultRequestHeaders.Authorization = CreateAuthorization(options.ApiKey, options.Username, options.Password);
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.UserAgent.ParseAdd("MCPServer");
         });
+        services.AddHostedService<ElasticStartupVerifier>();
 
-        services.AddHostedService<JiraStartupVerifier>();
+        if (!string.IsNullOrWhiteSpace(configuration[$"{KibanaOptions.SectionName}:Url"]))
+        {
+            services.AddKibanaAuthentication(configuration);
+        }
+
         return services;
     }
+
+    private static IServiceCollection AddKibanaAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<KibanaOptions>()
+            .Bind(configuration.GetSection(KibanaOptions.SectionName))
+            .ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<KibanaOptions>, KibanaOptionsValidator>());
+
+        services.AddHttpClient<IKibanaApiClient, KibanaApiClient>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<KibanaOptions>>().Value;
+            var elastic = sp.GetRequiredService<IOptions<ElasticOptions>>().Value;
+            var ownCredentials = !string.IsNullOrWhiteSpace(options.ApiKey) || !string.IsNullOrWhiteSpace(options.Username);
+            client.BaseAddress = new Uri(options.Url.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            client.DefaultRequestHeaders.Authorization = ownCredentials
+                ? CreateAuthorization(options.ApiKey, options.Username, options.Password)
+                : CreateAuthorization(elastic.ApiKey, elastic.Username, elastic.Password);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("MCPServer");
+        });
+        services.AddHostedService<KibanaStartupVerifier>();
+        return services;
+    }
+
+    private static AuthenticationHeaderValue CreateAuthorization(string apiKey, string username, string password)
+        => !string.IsNullOrWhiteSpace(apiKey)
+            ? new AuthenticationHeaderValue("ApiKey", apiKey)
+            : new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")));
 }
