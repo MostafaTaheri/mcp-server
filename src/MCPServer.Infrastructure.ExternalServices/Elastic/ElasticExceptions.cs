@@ -21,3 +21,17 @@ public class ElasticAuthenticationException : ThirdPartyServiceException
 {
     public ElasticAuthenticationException(string code, string? message = null, List<string>? details = null) : base(code: code, message: message ?? "Elasticsearch connection check failed.", details: details ?? []) { }
 }
+
+public sealed class ElasticRateLimitedException : ThirdPartyServiceException
+{
+    public ElasticRateLimitedException() : base(code: "429", message: "Elasticsearch is rate limiting requests.", details: []) { }
+
+    public override UpstreamFailureKind Kind => UpstreamFailureKind.RateLimited;
+}
+
+public sealed class ElasticQueryTimeoutException : ThirdPartyServiceException
+{
+    public ElasticQueryTimeoutException() : base(code: "408", message: "Elasticsearch did not finish the query within the server-side time limit.", details: []) { }
+
+    public override UpstreamFailureKind Kind => UpstreamFailureKind.Timeout;
+}

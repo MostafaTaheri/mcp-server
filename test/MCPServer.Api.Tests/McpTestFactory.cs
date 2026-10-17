@@ -1,4 +1,5 @@
 using MCPServer.Application.Features.Observability.Catalog;
+using MCPServer.BuildingBlock.Interfaces;
 using MCPServer.Application.Features.Observability.ConnectionStatus;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -27,9 +28,37 @@ public sealed class FakeCatalogService : ICatalogService
         => Task.FromResult(new FieldCatalog(signal, [new CatalogField("@timestamp", "date")], 1, false));
 }
 
+public sealed class FakeElasticApiClient : IElasticApiClient
+{
+    public Func<LogSearchRequest, LogSearchResult> OnSearch { get; set; } = _ => new LogSearchResult([], 0);
+    public Func<string, string, LogEntry?> OnGet { get; set; } = (_, _) => null;
+    public Func<LogFilter, int, IReadOnlyList<LogHistogramBucket>> OnHistogram { get; set; } = (_, _) => [];
+    public List<LogSearchRequest> Searches { get; } = [];
+    public int HistogramInterval { get; private set; }
+
+    public Task<ElasticClusterInfo> GetClusterInfoAsync(CancellationToken cancellationToken) => Task.FromResult(new ElasticClusterInfo("test", "9.0.0"));
+    public Task<IReadOnlyList<string>> ListServicesAsync(int max, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<string>>([]);
+    public Task<IReadOnlyList<ElasticField>> GetFieldsAsync(string signal, int max, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ElasticField>>([]);
+
+    public Task<LogSearchResult> SearchLogsAsync(LogSearchRequest request, CancellationToken cancellationToken)
+    {
+        Searches.Add(request);
+        return Task.FromResult(OnSearch(request));
+    }
+
+    public Task<LogEntry?> GetLogAsync(string index, string id, CancellationToken cancellationToken) => Task.FromResult(OnGet(index, id));
+
+    public Task<IReadOnlyList<LogHistogramBucket>> GetLogHistogramAsync(LogFilter filter, int intervalSeconds, CancellationToken cancellationToken)
+    {
+        HistogramInterval = intervalSeconds;
+        return Task.FromResult(OnHistogram(filter, intervalSeconds));
+    }
+}
+
 public sealed class McpTestFactory : WebApplicationFactory<Program>
 {
     public FakeConnectionStatusService Status { get; } = new();
+    public FakeElasticApiClient Elastic { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -46,6 +75,8 @@ public sealed class McpTestFactory : WebApplicationFactory<Program>
                 services.Remove(d);
             services.RemoveAll<IConnectionStatusService>();
             services.AddSingleton<IConnectionStatusService>(Status);
+            services.RemoveAll<IElasticApiClient>();
+            services.AddSingleton<IElasticApiClient>(Elastic);
             services.RemoveAll<ICatalogService>();
             services.AddSingleton<ICatalogService>(new FakeCatalogService());
         });

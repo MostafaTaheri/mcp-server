@@ -47,15 +47,6 @@ try
     app.MapControllers();
     app.MapHealthEndpoints();
 
-    // No per-caller authentication yet (OBS-AUTH-06): Production must opt in explicitly.
-    var allowUnauthenticatedMcp = configuration.GetValue<bool>("Mcp:AllowUnauthenticated");
-    if (app.Environment.IsDevelopment() || allowUnauthenticatedMcp)
-    {
-        if (!app.Environment.IsDevelopment())
-            Log.Warning("/mcp is exposed without per-caller authentication (Mcp:AllowUnauthenticated=true). Protect it with a gateway or network controls");
-
-        app.MapMcp("/mcp");
-    }
 
     app.Run();
 }
