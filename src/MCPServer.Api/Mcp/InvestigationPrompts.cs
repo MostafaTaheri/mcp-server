@@ -9,7 +9,9 @@ public sealed class InvestigationPrompts
     private const string Preamble =
         "Work read-only and from evidence. First call the tool obs_get_connection_status to confirm Elastic is reachable. " +
         "Read the resources obs://services (to confirm the exact service name) and obs://fields/logs (to use real field names) before querying. " +
-        "Start with a narrow scope and widen only if needed. ";
+        "Start with a narrow scope and widen only if needed. " +
+        "Search logs with logs_search, group recent errors with logs_error_summary, read one entry in full with logs_get, " +
+        "see its neighbours with logs_context, follow a request with logs_by_trace, and spot spikes with logs_histogram. ";
 
     private const string Evidence =
         " Cite evidence for every claim: trace IDs, log document IDs with timestamps, and Kibana links where available. " +
@@ -22,8 +24,8 @@ public sealed class InvestigationPrompts
         [Description("Time window to examine, e.g. 15m, 1h")] string timeWindow = "15m")
         => Preamble +
            $"Investigate an error spike in service '{service}' over the last {timeWindow}. " +
-           "1) Compare the error count with the preceding window of equal length to confirm the spike. " +
-           "2) Group errors by message, exception type and endpoint to find the dominant pattern. " +
+           "1) Use logs_histogram to compare the error volume with the preceding window of equal length and confirm the spike. " +
+           "2) Use logs_error_summary to find the dominant error pattern, then logs_get and logs_context on a sample. " +
            "3) Pick representative failing traces and follow them to the first failing span or downstream dependency. " +
            "4) Check whether the errors started at a specific time, version or host." + Evidence;
 
@@ -36,7 +38,7 @@ public sealed class InvestigationPrompts
            "1) Load all spans of the trace and the total duration. " +
            "2) Find the critical path and the spans with the largest self time (not just the largest duration). " +
            "3) Look for sequential calls that could be parallel, repeated calls (N+1), retries and timeouts. " +
-           "4) Correlate with logs that carry the same trace ID around the slow spans." + Evidence;
+           "4) Use logs_by_trace to correlate with logs that carry the same trace ID around the slow spans." + Evidence;
 
     [McpServerPrompt(Name = "compare_before_after_deploy")]
     [Description("Guides the assistant through comparing a service's behaviour before and after a deploy.")]

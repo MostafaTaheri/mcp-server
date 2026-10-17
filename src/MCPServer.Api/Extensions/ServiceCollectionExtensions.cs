@@ -59,6 +59,7 @@ public static class ServiceCollectionExtensions
         services.AddMcpServer()
             .WithHttpTransport(o => o.Stateless = true)
             .WithTools<ObservabilityTools>()
+            .WithTools<LogTools>()
             .WithResources<ObservabilityResources>()
             .WithPrompts<InvestigationPrompts>()
             .WithRequestFilters(f => f.AddCallToolFilter(ToolErrorFilter.Create()));

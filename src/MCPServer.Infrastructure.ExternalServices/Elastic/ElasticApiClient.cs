@@ -6,7 +6,7 @@ using MCPServer.BuildingBlock.Interfaces;
 
 namespace MCPServer.Infrastructure.ExternalServices.Elastic;
 
-public sealed class ElasticApiClient(HttpClient httpClient) : IElasticApiClient
+public sealed partial class ElasticApiClient(HttpClient httpClient) : IElasticApiClient
 {
     public async Task<ElasticClusterInfo> GetClusterInfoAsync(CancellationToken cancellationToken)
     {
@@ -106,6 +106,8 @@ public sealed class ElasticApiClient(HttpClient httpClient) : IElasticApiClient
                 throw new ElasticUnauthorizedException();
             case HttpStatusCode.Forbidden:
                 throw new ElasticForbiddenException();
+            case HttpStatusCode.TooManyRequests:
+                throw new ElasticRateLimitedException();
             case not HttpStatusCode.OK:
                 throw new ElasticAuthenticationException(code: response.StatusCode.ToString());
         }
