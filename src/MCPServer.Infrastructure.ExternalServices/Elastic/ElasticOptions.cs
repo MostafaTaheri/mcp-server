@@ -16,6 +16,8 @@ public sealed class ElasticOptions
 
     public string Password { get; set; } = string.Empty;
 
+    public bool AllowInsecureHttp { get; set; }
+
     [Range(1, 300)]
     public int TimeoutSeconds { get; set; } = 30;
 }

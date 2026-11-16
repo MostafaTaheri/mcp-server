@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../MCPServer.BuildingBlock/MCPServer.BuildingBlock.csproj" />
-    <ProjectReference Include="../MCPServer.Domain/MCPServer.Domain.csproj" />
   </ItemGroup>
 
     <ItemGroup>

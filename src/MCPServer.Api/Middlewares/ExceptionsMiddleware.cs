@@ -1,7 +1,6 @@
 using System.Text.Json;
 using MCPServer.Api.Models.Responses;
 using MCPServer.Application.Exceptions;
-using MCPServer.Domain.Exceptions;
 
 namespace MCPServer.Api.Middlewares;
 
@@ -39,11 +38,6 @@ public class ExceptionsMiddleware : BaseExceptionMiddleware
     private (GeneralResponse response, int statusCode) GetErrorResponse(Exception ex) =>
         ex switch
         {
-            DomainException exception => (new GeneralResponse(
-                exception.Code,
-                "Domain Error",
-                new List<string> { exception.Message, string.Join(", ", exception.Details) }), 400),
-
             NotFoundException exception  => (new GeneralResponse(
                 exception.Code,
                 "Not found Error",

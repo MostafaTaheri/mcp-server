@@ -23,9 +23,9 @@ public sealed class ElasticOptionsValidator : IValidateOptions<ElasticOptions>
             {
                 errors.Add("Elastic:Url must be an absolute URL, e.g. https://my-cluster.example.com:9200.");
             }
-            else if (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))
+            else if (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && (uri.IsLoopback || options.AllowInsecureHttp)))
             {
-                errors.Add("Elastic:Url must use https (http is only allowed for localhost).");
+                errors.Add("Elastic:Url must use https (http is only allowed for localhost, or when Elastic:AllowInsecureHttp is true).");
             }
         }
         else if (!ElasticEndpoint.TryDecodeCloudId(options.CloudId, out _))
