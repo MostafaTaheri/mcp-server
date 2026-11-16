@@ -17,9 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/MCPServer.Domain/MCPServer.Domain.csproj" />
     <ProjectReference Include="../../src/MCPServer.Application/MCPServer.Application.csproj" />
-    <ProjectReference Include="../../src/MCPServer.Infrastructure.DataAccess/MCPServer.Infrastructure.DataAccess.csproj" />
     <ProjectReference Include="../../src/MCPServer.Api/MCPServer.Api.csproj" />
   </ItemGroup>
 

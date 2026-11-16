@@ -161,8 +161,6 @@ src/
   MCPServer.Application                    Use cases (connection status, catalogs) and tool error mapping
   MCPServer.BuildingBlock                  Shared interfaces and contracts
   MCPServer.Composition                    Dependency-injection wiring
-  MCPServer.Domain                         Domain model
-  MCPServer.Infrastructure.DataAccess      Data access
   MCPServer.Infrastructure.ExternalServices  Elasticsearch and Kibana clients, startup verifiers
 test/
   MCPServer.Api.Tests                      MCP tool and contract tests through the SDK client
